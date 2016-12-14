@@ -5,7 +5,7 @@ clear all
 load nmap
 
 % Generate equally divided sphere
-[latGridInDegrees, longGridInDegrees] = GridSphere(2000) ;
+[latGridInDegrees, longGridInDegrees] = GridSphere(600) ;
 % z = sin(latGridInDegrees/180*pi)
 % x = cos(latGridInDegrees/180*pi).*cos(longGridInDegrees/180*pi)
 % y = cos(latGridInDegrees/180*pi).*sin(longGridInDegrees/180*pi)
@@ -38,7 +38,7 @@ end
 
 %cnt = log(log(log(cnt+1.5)+1.1)+1.1);
 %cnt = log(log(cnt+1.5)+1.1);
-cnt = log(cnt+1.5);
+cnt = log(cnt+1.1);
 
 
 cntfmax = max(cnt);
@@ -51,12 +51,53 @@ grid on
 map = cool(100);
 %map = colorcube(100);
 
+
+Threshold_ratio = 5;
+th = mean(cnt)*Threshold_ratio
+
+
 % Draw the unit sphere with color
 for i = 1: pn/1.5
     colindex = int16((cnt(i)/cntfmax)*100);
     if colindex==0
         colindex=1;
     end
-    plot3(x(i),y(i),z(i),'o','Color',map(colindex,:))
+    if cnt(i)>th
+        plot3(x(i),y(i),z(i),'o','Color',map(colindex,:))
+    else
+        plot3(x(i),y(i),z(i),'.','Color',[0.8 0.8 0.8])
+    end
+    
 end
 
+xlabel('x')
+ylabel('y')
+zlabel('z')
+
+% Longitude vs Latitude graph
+index=find(cnt>th)
+lovsla=[longGridInDegrees(index) latGridInDegrees(index) ];
+cntth=cnt(index)';
+cntfmax=max(cntth)
+figure
+hold on
+for i = 1: length(lovsla)
+    colindex = int16((cntth(i)/cntfmax)*100);
+    if colindex==0
+        colindex=1;
+    end
+    plot(lovsla(i,1),lovsla(i,2),'o','Color',map(colindex,:))
+end
+
+xlabel('lat')
+ylabel('lon')
+
+
+% PCA 
+nanindex=find(isnan(nmap3n)==1);
+nmap3n(nanindex)=[0];
+sumv=sum(nmap3n');
+nonzeron=find(sumv~=0);
+nmap3n=nmap3n(nonzeron,:);
+
+[COEFF, SCORE, LATENT] = pca(nmap3n);
